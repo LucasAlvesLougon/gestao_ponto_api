@@ -55,4 +55,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(TimeEntry::class);
     }
+
+    /**
+     * Get all work schedules for the user.
+     */
+    public function workSchedules(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(WorkSchedule::class);
+    }
+
+    /**
+     * Get current daily target hours (defaults to 8.0).
+     */
+    public function getDailyTargetHours(): float
+    {
+        $schedule = $this->workSchedules()
+            ->orderBy('effective_from', 'desc')
+            ->first();
+
+        return $schedule ? (float) $schedule->daily_target_hours : 8.0;
+    }
 }
