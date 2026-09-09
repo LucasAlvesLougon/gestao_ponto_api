@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\TimeEntryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,10 +19,16 @@ Route::prefix('v1')->group(function () {
 
     // Rotas Protegidas por Token Sanctum
     Route::middleware('auth:sanctum')->group(function () {
+        // Usuário & Perfil
         Route::prefix('auth')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout']);
             Route::get('/me', [AuthController::class, 'me']);
             Route::put('/me', [AuthController::class, 'update']);
         });
+
+        // Controle de Ponto (Time Entries)
+        Route::apiResource('time-entries', TimeEntryController::class)->only([
+            'index', 'store', 'update', 'destroy'
+        ]);
     });
 });
