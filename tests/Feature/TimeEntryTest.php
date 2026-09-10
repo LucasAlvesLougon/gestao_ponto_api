@@ -43,7 +43,7 @@ class TimeEntryTest extends TestCase
         $user = User::factory()->create(['timezone' => 'America/Sao_Paulo']);
         Sanctum::actingAs($user);
 
-        $date = Carbon::now('America/Sao_Paulo')->toDateString();
+        $date = Carbon::now('America/Sao_Paulo')->subDays(2)->toDateString();
 
         // 1. Entrada 08:00
         $res1 = $this->postJson('/api/v1/time-entries', [
@@ -109,7 +109,7 @@ class TimeEntryTest extends TestCase
         $user = User::factory()->create(['timezone' => 'America/Sao_Paulo']);
         Sanctum::actingAs($user);
 
-        $date = Carbon::now('America/Sao_Paulo')->toDateString();
+        $date = Carbon::now('America/Sao_Paulo')->subDays(2)->toDateString();
 
         $this->postJson('/api/v1/time-entries', [
             'type' => 'CLOCK_IN',
@@ -247,5 +247,52 @@ class TimeEntryTest extends TestCase
         $this->assertDatabaseMissing('time_entries', [
             'id' => $entry->id,
         ]);
+    }
+
+    public function test_user_cannot_record_entry_in_future(): void
+    {
+        $user = User::factory()->create(['timezone' => 'America/Sao_Paulo']);
+        Sanctum::actingAs($user);
+
+        $futureTime = Carbon::now('America/Sao_Paulo')->addHours(2)->toDateTimeString();
+
+        $response = $this->postJson('/api/v1/time-entries', [
+            'type' => 'CLOCK_IN',
+            'custom_time' => $futureTime,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['custom_time']);
+        $this->assertEquals(
+            'Não é permitido registrar ponto para data ou horário futuro.',
+            $response->json('errors.custom_time.0')
+        );
+    }
+
+    public function test_user_cannot_update_entry_to_future_time(): void
+    {
+        $user = User::factory()->create(['timezone' => 'America/Sao_Paulo']);
+        Sanctum::actingAs($user);
+
+        $date = Carbon::now('America/Sao_Paulo')->subDays(2)->toDateString();
+        $createRes = $this->postJson('/api/v1/time-entries', [
+            'type' => 'CLOCK_IN',
+            'custom_time' => "{$date} 08:00:00",
+        ]);
+        $entryId = $createRes->json('entry.id');
+
+        $futureTime = Carbon::now('America/Sao_Paulo')->addDay()->toDateTimeString();
+
+        $response = $this->putJson("/api/v1/time-entries/{$entryId}", [
+            'time' => $futureTime,
+            'reason' => 'Tentando colocar para amanhã',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['time']);
+        $this->assertEquals(
+            'Não é permitido ajustar registro para data ou horário futuro.',
+            $response->json('errors.time.0')
+        );
     }
 }

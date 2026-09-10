@@ -134,6 +134,14 @@ class TimeTrackingService
             ? Carbon::parse($customTime, $timezone)->setTimezone('UTC')
             : Carbon::now('UTC');
 
+        // Impede registro de ponto para data ou horário futuro (com 1 minuto de tolerância técnica)
+        $nowUtc = Carbon::now('UTC')->addMinute();
+        if ($timestampUtc->greaterThan($nowUtc)) {
+            throw ValidationException::withMessages([
+                'custom_time' => ['Não é permitido registrar ponto para data ou horário futuro.'],
+            ]);
+        }
+
         $resolvedType = $type ?: $this->determineNextExpectedType($user, $timestampUtc->copy()->setTimezone($timezone));
 
         $this->validateSequence($user, $resolvedType, $timestampUtc);
@@ -158,6 +166,14 @@ class TimeTrackingService
 
         $timezone = $user->timezone ?? 'America/Sao_Paulo';
         $newTimestampUtc = Carbon::parse($newTime, $timezone)->setTimezone('UTC');
+
+        // Impede ajuste para data ou horário futuro (com 1 minuto de tolerância técnica)
+        $nowUtc = Carbon::now('UTC')->addMinute();
+        if ($newTimestampUtc->greaterThan($nowUtc)) {
+            throw ValidationException::withMessages([
+                'time' => ['Não é permitido ajustar registro para data ou horário futuro.'],
+            ]);
+        }
 
         $originalTime = $entry->original_registered_at ?: $entry->registered_at;
 
