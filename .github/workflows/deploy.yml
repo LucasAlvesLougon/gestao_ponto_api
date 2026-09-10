@@ -26,6 +26,11 @@ jobs:
       - name: 📦 Instalar Dependências do Composer
         run: composer install --prefer-dist --no-progress --no-interaction
 
+      - name: 🔑 Configurar Ambiente de Testes
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
       - name: 🧪 Executar Suíte de Testes
         run: php artisan test
 
