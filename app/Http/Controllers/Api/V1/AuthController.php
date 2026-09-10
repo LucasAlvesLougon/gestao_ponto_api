@@ -71,8 +71,8 @@ class AuthController extends Controller
         $timezone = $user->timezone ?? 'America/Sao_Paulo';
         $today = Carbon::now($timezone)->toDateString();
         $entries = $this->timeTrackingService->getEntriesForDate($user, $today);
-        $nextExpectedType = $this->timeTrackingService->determineNextExpectedType($user);
-        $dailySummary = $this->hourCalculationService->calculateDailySummary($user, $today);
+        $nextExpectedType = $this->timeTrackingService->determineNextExpectedType($user, null, $entries);
+        $dailySummary = $this->hourCalculationService->calculateDailySummary($user, $today, $entries);
 
         return response()->json([
             'message' => 'Login realizado com sucesso.',
@@ -122,16 +122,17 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::firstOrCreate(
-            ['email' => strtolower(trim($email))],
-            [
-                'name' => $name ?? explode('@', $email)[0],
+        $normalizedEmail = strtolower(trim($email));
+        $user = User::where('email', $normalizedEmail)->first();
+
+        if (! $user) {
+            $user = User::create([
+                'email' => $normalizedEmail,
+                'name' => $name ?? explode('@', $normalizedEmail)[0],
                 'password' => Hash::make(\Illuminate\Support\Str::random(32)),
                 'timezone' => 'America/Sao_Paulo',
-            ]
-        );
-
-        if (empty($user->name) && !empty($name)) {
+            ]);
+        } elseif (empty($user->name) && ! empty($name)) {
             $user->update(['name' => $name]);
         }
 
@@ -142,8 +143,8 @@ class AuthController extends Controller
         $timezone = $user->timezone ?? 'America/Sao_Paulo';
         $today = Carbon::now($timezone)->toDateString();
         $entries = $this->timeTrackingService->getEntriesForDate($user, $today);
-        $nextExpectedType = $this->timeTrackingService->determineNextExpectedType($user);
-        $dailySummary = $this->hourCalculationService->calculateDailySummary($user, $today);
+        $nextExpectedType = $this->timeTrackingService->determineNextExpectedType($user, null, $entries);
+        $dailySummary = $this->hourCalculationService->calculateDailySummary($user, $today, $entries);
 
         return response()->json([
             'message' => 'Login com Google realizado com sucesso.',

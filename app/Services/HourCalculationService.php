@@ -15,10 +15,10 @@ class HourCalculationService
     /**
      * Calculate hours and balance for a specific day.
      */
-    public function calculateDailySummary(User $user, string $date): array
+    public function calculateDailySummary(User $user, string $date, ?\Illuminate\Database\Eloquent\Collection $preloadedEntries = null): array
     {
         $timezone = $user->timezone ?? 'America/Sao_Paulo';
-        $entries = $this->timeTrackingService->getEntriesForDate($user, $date);
+        $entries = $preloadedEntries ?? $this->timeTrackingService->getEntriesForDate($user, $date);
 
         $targetHours = $user->getDailyTargetHours();
         $targetMinutes = (int) round($targetHours * 60);

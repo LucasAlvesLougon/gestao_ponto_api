@@ -28,12 +28,12 @@ class TimeTrackingService
     /**
      * Determine the next expected time entry type for today.
      */
-    public function determineNextExpectedType(User $user, ?Carbon $nowInUserTz = null): string
+    public function determineNextExpectedType(User $user, ?Carbon $nowInUserTz = null, ?\Illuminate\Database\Eloquent\Collection $preloadedEntries = null): string
     {
         $timezone = $user->timezone ?? 'America/Sao_Paulo';
         $today = $nowInUserTz ?? Carbon::now($timezone);
 
-        $entries = $this->getEntriesForDate($user, $today->toDateString());
+        $entries = $preloadedEntries ?? $this->getEntriesForDate($user, $today->toDateString());
 
         if ($entries->isEmpty()) {
             return 'CLOCK_IN';
