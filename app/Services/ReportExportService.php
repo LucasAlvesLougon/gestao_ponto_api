@@ -28,7 +28,7 @@ class ReportExportService
 
         // Cabeçalho institucional
         fputcsv($fp, ['RELATÓRIO MENSAL DE PONTO / BANCO DE HORAS'], ';');
-        fputcsv($fp, ['Profissional:', $user->name], ';');
+        fputcsv($fp, ['Colaborador:', $user->name], ';');
         fputcsv($fp, ['E-mail:', $user->email], ';');
         fputcsv($fp, ['Mês de Referência:', $summary['month_formatted']], ';');
         fputcsv($fp, ['Fuso Horário:', $timezone], ';');
@@ -167,7 +167,7 @@ class ReportExportService
     <div class='header'>
         <div>
             <div class='title'>ESPELHO DE PONTO MENSAL</div>
-            <div class='subtitle'>Profissional: <strong>{$user->name}</strong> ({$user->email})</div>
+            <div class='subtitle'>Colaborador: <strong>{$user->name}</strong> ({$user->email})</div>
         </div>
         <div style='text-align: right;'>
             <div class='title'>{$summary['month_formatted']}</div>
@@ -208,11 +208,20 @@ class ReportExportService
         </tbody>
     </table>
 
-    <div style='margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b;'>
-        <div>Emitido via Gestão de Ponto em: " . Carbon::now($timezone)->format('d/m/Y H:i') . "</div>
-        <div style='border-top: 1px solid #cbd5e1; width: 250px; text-align: center; padding-top: 6px;'>
-            Assinatura do Profissional
+    <div style='margin-top: 55px; display: flex; justify-content: space-around; gap: 40px; page-break-inside: avoid;'>
+        <div style='border-top: 1px solid #334155; width: 280px; text-align: center; padding-top: 8px;'>
+            <div style='font-size: 12px; font-weight: bold; color: #0f172a;'>Assinatura do Colaborador</div>
+            <div style='font-size: 11px; color: #64748b; margin-top: 2px;'>{$user->name}</div>
         </div>
+        <div style='border-top: 1px solid #334155; width: 280px; text-align: center; padding-top: 8px;'>
+            <div style='font-size: 12px; font-weight: bold; color: #0f172a;'>Assinatura do Gestor</div>
+            <div style='font-size: 11px; color: #64748b; margin-top: 2px;'>Responsável / Gestor Imediato</div>
+        </div>
+    </div>
+
+    <div style='margin-top: 35px; display: flex; justify-content: space-between; font-size: 11px; color: #64748b; page-break-inside: avoid;'>
+        <div>Emitido via Gestão de Ponto em: " . Carbon::now($timezone)->format('d/m/Y H:i') . "</div>
+        <div>Documento para fins de controle e conformidade de jornada</div>
     </div>
 </body>
 </html>

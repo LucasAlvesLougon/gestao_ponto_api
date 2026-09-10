@@ -34,6 +34,7 @@ class ReportTest extends TestCase
 
         $content = $response->getContent();
         $this->assertStringContainsString('Lucas Dev', $content);
+        $this->assertStringContainsString('Colaborador:', $content);
         $this->assertStringContainsString('TOTAIS DO PERÍODO', $content);
     }
 
@@ -50,6 +51,9 @@ class ReportTest extends TestCase
         $content = $response->getContent();
         $this->assertStringContainsString('ESPELHO DE PONTO MENSAL', $content);
         $this->assertStringContainsString('Lucas Dev', $content);
+        $this->assertStringContainsString('Colaborador:', $content);
+        $this->assertStringContainsString('Assinatura do Colaborador', $content);
+        $this->assertStringContainsString('Assinatura do Gestor', $content);
     }
 
     public function test_unauthenticated_user_cannot_export_reports(): void
