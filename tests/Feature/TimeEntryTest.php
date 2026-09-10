@@ -185,12 +185,12 @@ class TimeEntryTest extends TestCase
         ]);
     }
 
-    public function test_user_cannot_update_time_entry_without_reason(): void
+    public function test_user_can_update_time_entry_without_reason(): void
     {
         $user = User::factory()->create(['timezone' => 'America/Sao_Paulo']);
         Sanctum::actingAs($user);
 
-        $date = Carbon::now('America/Sao_Paulo')->toDateString();
+        $date = Carbon::now('America/Sao_Paulo')->subDays(2)->toDateString();
 
         $createRes = $this->postJson('/api/v1/time-entries', [
             'type' => 'CLOCK_IN',
@@ -201,11 +201,10 @@ class TimeEntryTest extends TestCase
 
         $response = $this->putJson("/api/v1/time-entries/{$entryId}", [
             'time' => "{$date} 08:00:00",
-            'reason' => '', // Vazio
         ]);
 
-        $response->assertStatus(422)
-            ->assertJsonValidationErrors(['reason']);
+        $response->assertStatus(200)
+            ->assertJsonPath('entry.is_edited', true);
     }
 
     public function test_user_cannot_edit_other_users_entry(): void

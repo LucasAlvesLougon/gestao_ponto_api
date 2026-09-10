@@ -156,7 +156,7 @@ class TimeTrackingService
     /**
      * Update an existing time entry with audit reason.
      */
-    public function updateEntry(TimeEntry $entry, User $user, string $newTime, string $reason): TimeEntry
+    public function updateEntry(TimeEntry $entry, User $user, string $newTime, ?string $reason = null): TimeEntry
     {
         if ($entry->user_id !== $user->id) {
             throw ValidationException::withMessages([

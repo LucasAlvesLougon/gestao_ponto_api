@@ -15,7 +15,7 @@ class UpdateTimeEntryRequest extends FormRequest
     {
         return [
             'time' => ['required', 'date'],
-            'reason' => ['required', 'string', 'min:5', 'max:500'],
+            'reason' => ['nullable', 'string', 'max:500'],
         ];
     }
 
@@ -24,8 +24,6 @@ class UpdateTimeEntryRequest extends FormRequest
         return [
             'time.required' => 'O novo horário é obrigatório.',
             'time.date' => 'Formato de horário inválido.',
-            'reason.required' => 'A justificativa para a alteração é obrigatória.',
-            'reason.min' => 'A justificativa deve conter no mínimo 5 caracteres.',
         ];
     }
 }

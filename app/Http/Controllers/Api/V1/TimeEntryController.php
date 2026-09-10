@@ -82,7 +82,7 @@ class TimeEntryController extends Controller
             $timeEntry,
             $user,
             $validated['time'],
-            $validated['reason']
+            $validated['reason'] ?? null
         );
 
         return response()->json([
