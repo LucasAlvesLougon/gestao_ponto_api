@@ -35,7 +35,12 @@ class UpdateProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'name.required' => 'O nome é obrigatório.',
+            'email.required' => 'O e-mail é obrigatório.',
+            'email.email' => 'Informe um e-mail válido.',
             'email.unique' => 'Este e-mail já está em uso.',
+            'password.min' => 'A senha deve conter no mínimo 8 caracteres.',
+            'timezone.required' => 'O fuso horário é obrigatório.',
             'timezone.timezone' => 'Fuso horário inválido.',
         ];
     }
