@@ -93,27 +93,49 @@ class AuthController extends Controller
      */
     public function googleLogin(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'name' => ['nullable', 'string', 'max:255'],
-            'google_id' => ['nullable', 'string'],
-            'device_name' => ['nullable', 'string'],
-        ]);
+        $token = $request->input('idToken') ?? $request->input('credential') ?? $request->input('token');
+        $email = $request->input('email');
+        $name = $request->input('name');
+        $googleId = $request->input('google_id');
+
+        if ($token) {
+            $parts = explode('.', $token);
+            if (count($parts) >= 2) {
+                $payloadJson = base64_decode(strtr($parts[1], '-_', '+/'));
+                if ($payloadJson) {
+                    $payload = json_decode($payloadJson, true);
+                    if (is_array($payload)) {
+                        $email = $payload['email'] ?? $email;
+                        $name = $payload['name'] ?? $payload['given_name'] ?? $name;
+                        $googleId = $payload['sub'] ?? $googleId;
+                    }
+                }
+            }
+        }
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'message' => 'O token do Google não contém um e-mail válido ou não foi fornecido.',
+                'errors' => [
+                    'email' => ['E-mail inválido ou ausente no login Google.'],
+                ],
+            ], 422);
+        }
 
         $user = User::firstOrCreate(
-            ['email' => $validated['email']],
+            ['email' => strtolower(trim($email))],
             [
-                'name' => $validated['name'] ?? explode('@', $validated['email'])[0],
+                'name' => $name ?? explode('@', $email)[0],
                 'password' => Hash::make(\Illuminate\Support\Str::random(32)),
                 'timezone' => 'America/Sao_Paulo',
             ]
         );
 
-        if (empty($user->name) && !empty($validated['name'])) {
-            $user->update(['name' => $validated['name']]);
+        if (empty($user->name) && !empty($name)) {
+            $user->update(['name' => $name]);
         }
 
-        $deviceName = $validated['device_name'] ?? 'google_auth';
+        $deviceName = $request->input('device_name') ?? 'google_auth';
         $user->tokens()->where('name', $deviceName)->delete();
         $token = $user->createToken($deviceName)->plainTextToken;
 

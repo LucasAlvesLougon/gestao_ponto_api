@@ -172,4 +172,27 @@ class AuthTest extends TestCase
             'name' => 'Google User',
         ]);
     }
+
+    public function test_user_can_login_with_google_id_token(): void
+    {
+        $payloadData = [
+            'email' => 'jwt.google@example.com',
+            'name' => 'JWT Google User',
+            'sub' => 'google_sub_jwt_987',
+        ];
+        $idToken = 'eyJhbGciOiJSUzI1NiJ9.' . rtrim(strtr(base64_encode(json_encode($payloadData)), '+/', '-_'), '=') . '.mockSignature';
+
+        $response = $this->postJson('/api/v1/auth/google', [
+            'idToken' => $idToken,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('user.email', 'jwt.google@example.com')
+            ->assertJsonPath('user.name', 'JWT Google User');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'jwt.google@example.com',
+            'name' => 'JWT Google User',
+        ]);
+    }
 }
