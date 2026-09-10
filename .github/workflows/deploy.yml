@@ -35,8 +35,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: 🔍 Verificar se SSH foi configurado
+        id: check_ssh
+        run: |
+          if [ -n "${{ secrets.SSH_HOST }}" ]; then
+            echo "has_ssh=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_ssh=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ SSH_HOST não configurado nos Secrets. Etapa SSH ignorada (caso use Git Webhook do hPanel)."
+          fi
+
       - name: 🚀 Conectar via SSH e rodar deploy-hostinger.sh
-        if: ${{ secrets.SSH_HOST != '' }}
+        if: steps.check_ssh.outputs.has_ssh == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
