@@ -6,8 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
+use App\Http\Resources\TimeEntryResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\HourCalculationService;
+use App\Services\TimeTrackingService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +19,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        protected TimeTrackingService $timeTrackingService,
+        protected HourCalculationService $hourCalculationService
+    ) {}
+
     /**
      * Handle user registration.
      */
@@ -54,12 +63,28 @@ class AuthController extends Controller
         }
 
         $deviceName = $validated['device_name'] ?? 'web_browser';
+        // Mantém a tabela personal_access_tokens limpa e rápida
+        $user->tokens()->where('name', $deviceName)->delete();
         $token = $user->createToken($deviceName)->plainTextToken;
+
+        // Pré-carrega dados do dia para o frontend inicializar o dashboard em 0ms
+        $timezone = $user->timezone ?? 'America/Sao_Paulo';
+        $today = Carbon::now($timezone)->toDateString();
+        $entries = $this->timeTrackingService->getEntriesForDate($user, $today);
+        $nextExpectedType = $this->timeTrackingService->determineNextExpectedType($user);
+        $dailySummary = $this->hourCalculationService->calculateDailySummary($user, $today);
 
         return response()->json([
             'message' => 'Login realizado com sucesso.',
             'user' => new UserResource($user),
             'token' => $token,
+            'initial_data' => [
+                'date' => $today,
+                'timezone' => $timezone,
+                'next_expected_type' => $nextExpectedType,
+                'entries' => TimeEntryResource::collection($entries),
+                'summary' => $dailySummary,
+            ],
         ]);
     }
 
