@@ -33,12 +33,10 @@ jobs:
     name: 🚀 Deploy SSH na Hostinger
     needs: test
     runs-on: ubuntu-latest
-    if: env.SSH_HOST != ''
-    env:
-      SSH_HOST: ${{ secrets.SSH_HOST }}
 
     steps:
       - name: 🚀 Conectar via SSH e rodar deploy-hostinger.sh
+        if: ${{ secrets.SSH_HOST != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
