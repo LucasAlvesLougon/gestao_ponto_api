@@ -1,0 +1,55 @@
+name: CI & Deploy API to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 🧪 Executar Testes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: 🐘 Configurar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, bcmath
+          coverage: none
+
+      - name: 📦 Instalar Dependências do Composer
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: 🧪 Executar Suíte de Testes
+        run: php artisan test
+
+  deploy-ssh:
+    name: 🚀 Deploy SSH na Hostinger
+    needs: test
+    runs-on: ubuntu-latest
+    if: env.SSH_HOST != ''
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+
+    steps:
+      - name: 🚀 Conectar via SSH e rodar deploy-hostinger.sh
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 65002 }}
+          script: |
+            cd ${{ secrets.SSH_DEPLOY_PATH || 'gestao_ponto_api' }}
+            git fetch --all
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+            chmod +x deploy-hostinger.sh
+            ./deploy-hostinger.sh
