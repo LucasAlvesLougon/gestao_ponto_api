@@ -89,6 +89,55 @@ class AuthController extends Controller
     }
 
     /**
+     * Handle Google authentication (login or register).
+     */
+    public function googleLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'google_id' => ['nullable', 'string'],
+            'device_name' => ['nullable', 'string'],
+        ]);
+
+        $user = User::firstOrCreate(
+            ['email' => $validated['email']],
+            [
+                'name' => $validated['name'] ?? explode('@', $validated['email'])[0],
+                'password' => Hash::make(\Illuminate\Support\Str::random(32)),
+                'timezone' => 'America/Sao_Paulo',
+            ]
+        );
+
+        if (empty($user->name) && !empty($validated['name'])) {
+            $user->update(['name' => $validated['name']]);
+        }
+
+        $deviceName = $validated['device_name'] ?? 'google_auth';
+        $user->tokens()->where('name', $deviceName)->delete();
+        $token = $user->createToken($deviceName)->plainTextToken;
+
+        $timezone = $user->timezone ?? 'America/Sao_Paulo';
+        $today = Carbon::now($timezone)->toDateString();
+        $entries = $this->timeTrackingService->getEntriesForDate($user, $today);
+        $nextExpectedType = $this->timeTrackingService->determineNextExpectedType($user);
+        $dailySummary = $this->hourCalculationService->calculateDailySummary($user, $today);
+
+        return response()->json([
+            'message' => 'Login com Google realizado com sucesso.',
+            'user' => new UserResource($user),
+            'token' => $token,
+            'initial_data' => [
+                'date' => $today,
+                'timezone' => $timezone,
+                'next_expected_type' => $nextExpectedType,
+                'entries' => TimeEntryResource::collection($entries),
+                'summary' => $dailySummary,
+            ],
+        ]);
+    }
+
+    /**
      * Handle user logout (revoke current token).
      */
     public function logout(Request $request): JsonResponse

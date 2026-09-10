@@ -146,4 +146,30 @@ class AuthTest extends TestCase
             'timezone' => 'America/Manaus',
         ]);
     }
+
+    public function test_user_can_login_with_google(): void
+    {
+        $payload = [
+            'email' => 'google.user@example.com',
+            'name' => 'Google User',
+            'google_id' => 'google_sub_123456',
+        ];
+
+        $response = $this->postJson('/api/v1/auth/google', $payload);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'message',
+                'user' => ['id', 'name', 'email', 'timezone'],
+                'token',
+                'initial_data' => ['date', 'timezone', 'next_expected_type', 'entries', 'summary'],
+            ])
+            ->assertJsonPath('user.email', 'google.user@example.com')
+            ->assertJsonPath('user.name', 'Google User');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'google.user@example.com',
+            'name' => 'Google User',
+        ]);
+    }
 }
