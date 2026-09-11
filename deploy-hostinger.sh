@@ -8,27 +8,32 @@ set -e
 
 echo "🚀 Iniciando deploy na Hostinger..."
 
+# 0. Limpar caches antigos de pacotes do bootstrap para evitar erros de classes de dev (como Pail/Sail)
+echo "🧹 Limpando caches de inicialização antigos..."
+rm -f bootstrap/cache/*.php
+
 # 1. Instalar dependências sem pacotes de desenvolvimento e sem scripts que exijam proc_open
 echo "📦 Instalando dependências do Composer (modo produção)..."
 composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
-# 2. Descobrir pacotes e executar migrações do banco de dados
+# 2. Limpar qualquer cache residual do bootstrap novamente após o composer install
+rm -f bootstrap/cache/*.php
+
+# 3. Executar migrações do banco de dados
 echo "🗄️ Executando migrações do banco de dados..."
-php artisan package:discover --ansi || true
 php artisan migrate --force
 
-# 3. Limpar e criar caches de alta performance
+# 4. Criar caches de alta performance
 echo "⚡ Otimizando configurações, rotas e views..."
-php artisan optimize:clear || true
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# 4. Criar link simbólico de storage se não existir
+# 5. Criar link simbólico de storage se não existir
 echo "🔗 Verificando storage:link..."
 php artisan storage:link || true
 
-# 5. Ajustar permissões para o servidor web da Hostinger
+# 6. Ajustar permissões para o servidor web da Hostinger
 echo "🔒 Ajustando permissões de storage e cache..."
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
